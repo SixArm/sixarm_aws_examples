@@ -2,17 +2,20 @@
 
 ##
 #
-# Simple upload of a local file to a S3 bucket,
-#
+# Simple upload of a local file to a S3 bucket.
 #
 # Syntax:
 #
-#     aws-s3-upload-tester bucket file content-type
+#     aws-s3-upload-tester <bucket> <file> <content-type>
 #
 # Example:
 #
 #     aws-s3-upload-tester mybucket example.png image/png
 #
+# The purpose is to do simple testing to verify that
+# the script is able to find your AWS credentials,
+# and use them to upload a local file to an S3 bucket.
+# 
 # Version 1.2.0
 #
 ##
