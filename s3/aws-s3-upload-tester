@@ -15,8 +15,8 @@
 # The purpose is to do simple testing to verify that
 # the script is able to find your AWS credentials,
 # and use them to upload a local file to an S3 bucket.
-# 
-# Version 1.2.0
+#
+# Version 1.3.1
 #
 ##
 set -euf
@@ -25,31 +25,42 @@ set -euf
 out() { printf %s\\n "$*" ; }
 err() { >&2 printf %s\\n "$*" ; }
 die() { >&2 printf %s\\n "$*" ; exit 1 ; }
+die_cmd() { die "Command needed: $1" ; }
+die_var() { die "Variable needed: $1" ; }
 cmd() { command -v "$1" >/dev/null 2>&1 ; }
+
+out "aws-s3-upload-tester..."
+
+if [ "$#" -ne 3 ]; then
+    die "Syntax: aws-s3-upload-tester <bucket> <file> <content-type>"
+fi
 
 bucket="$1"
 file="$2"
 content_type="$3"
 
-out "aws-s3-upload-tester..."
-out "bucket: $bucket"
-out "file: $file"
-out "content_type: $content_type"
+out "Bucket: $bucket"
+out "File: $file"
+out "Content type: $content_type"
 
-[ -z "${AWS_ACCESS_KEY_ID}" ] && die "Env var missing: AWS_ACCESS_KEY_ID"
-[ -z "${AWS_SECRET_ACCESS_KEY}" ] && die "Env var missing: AWS_SECRET_ACCESS_KEY"
+set +u
+[ -z "${AWS_ACCESS_KEY_ID}" ] && die_var AWS_ACCESS_KEY_ID
+[ -z "${AWS_SECRET_ACCESS_KEY}" ] && die_var AWS_SECRET_ACCESS_KEY
+set -u
+
 [ -f "$file" ] || die "File missing: $file"
 
-cmd "curl" || die_cmd "Command missing: curl"
-cmd "date" || die_cmd "Command missing: date"
-cmd "openssl" || die_cmd "Command missing: openssl"
+cmd curl || die_cmd curl
+cmd date || die_cmd date
+cmd openssl || die_cmd openssl
 
 resource="/${bucket}/${file}"
 date_value=`date -R`
-put_string="PUT\n\n${content_type}\n${date_value}\n${resource}"
-out "put_string: $put_string"
 
-signature=$(echo -en ${put_string} | openssl sha1 -hmac ${AWS_SECRET_ACCESS_KEY} -binary | base64)
+put_string=$(printf "PUT\n\n${content_type}\n${date_value}\n${resource}")
+out "put_string:$put_string"
+
+signature=$(printf "%s" "${put_string}" | openssl sha1 -hmac ${AWS_SECRET_ACCESS_KEY} -binary | base64)
 out "signature:$signature"
 
 host_value="${bucket}.s3.amazonaws.com"
