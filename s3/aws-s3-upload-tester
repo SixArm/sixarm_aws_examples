@@ -1,0 +1,61 @@
+#!/bin/sh
+
+##
+#
+# Simple upload of a local file to a S3 bucket,
+#
+#
+# Syntax:
+#
+#     aws-s3-upload-tester bucket file content-type
+#
+# Example:
+#
+#     aws-s3-upload-tester mybucket example.png image/png
+##
+set -euf
+
+# Helpers
+out() { printf %s\\n "$*" ; }
+err() { >&2 printf %s\\n "$*" ; }
+die() { >&2 printf %s\\n "$*" ; exit 1 ; }
+cmd() { command -v "$1" >/dev/null 2>&1 ; }
+
+bucket="$1"
+file="$2"
+content_type="$3"
+
+out "aws-s3-upload-tester..."
+out "bucket: $bucket"
+out "file: $file"
+out "content_type: $content_type"
+
+[ -z "${AWS_ACCESS_KEY_ID}" ] && die "Env var missing: AWS_ACCESS_KEY_ID"
+[ -z "${AWS_SECRET_ACCESS_KEY}" ] && die "Env var missing: AWS_SECRET_ACCESS_KEY"
+[ -f "$file" ] || die "File missing: $file"
+
+cmd "curl" || die_cmd "Command missing: curl"
+cmd "date" || die_cmd "Command missing: date"
+cmd "openssl" || die_cmd "Command missing: openssl"
+
+resource="/${bucket}/${file}"
+date_value=`date -R`
+put_string="PUT\n\n${content_type}\n${date_value}\n${resource}"
+out "put_string: $put_string"
+
+signature=$(echo -en ${put_string} | openssl sha1 -hmac ${AWS_SECRET_ACCESS_KEY} -binary | base64)
+out "signature:$signature"
+
+host_value="${bucket}.s3.amazonaws.com"
+uri="https://${bucket}.s3.amazonaws.com/${file}"
+out "uri:$uri"
+
+out 
+out
+curl -v -X PUT -T "${file}" \
+  -H "Host: ${host_value}" \
+  -H "Date: ${date_value}" \
+  -H "Content-Type: ${content_type}" \
+  -H "Authorization: AWS ${AWS_ACCESS_KEY_ID}:${signature}" \
+  "$uri"
+out
