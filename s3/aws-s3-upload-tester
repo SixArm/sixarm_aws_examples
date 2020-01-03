@@ -12,6 +12,9 @@
 # Example:
 #
 #     aws-s3-upload-tester mybucket example.png image/png
+#
+# Version 1.2.0
+#
 ##
 set -euf
 
