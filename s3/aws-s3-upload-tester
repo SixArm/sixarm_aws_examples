@@ -16,8 +16,6 @@
 # the script is able to find your AWS credentials,
 # and use them to upload a local file to an S3 bucket.
 #
-# Version 1.3.1
-#
 ##
 set -euf
 
@@ -30,6 +28,7 @@ die_var() { die "Variable needed: $1" ; }
 cmd() { command -v "$1" >/dev/null 2>&1 ; }
 
 out "aws-s3-upload-tester..."
+out "version 1.3.2"
 
 if [ "$#" -ne 3 ]; then
     die "Syntax: aws-s3-upload-tester <bucket> <file> <content-type>"
@@ -48,6 +47,9 @@ set +u
 [ -z "${AWS_SECRET_ACCESS_KEY}" ] && die_var AWS_SECRET_ACCESS_KEY
 set -u
 
+out "AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID"
+out "AWS_SECRET_ACCESS_KEY length: ${#AWS_SECRET_ACCESS_KEY}"
+
 [ -f "$file" ] || die "File missing: $file"
 
 cmd curl || die_cmd curl
@@ -55,7 +57,8 @@ cmd date || die_cmd date
 cmd openssl || die_cmd openssl
 
 resource="/${bucket}/${file}"
-date_value=`date -R`
+date_value=$(date -u "+%Y%m%dT%H%M%SZ")
+out "date_value:$date_value"
 
 put_string=$(printf "PUT\n\n${content_type}\n${date_value}\n${resource}")
 out "put_string:$put_string"
