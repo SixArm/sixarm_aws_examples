@@ -1,0 +1,70 @@
+
+## Set up script
+
+Download this script: 
+https://raw.githubusercontent.com/SixArm/sixarm_aws_examples/master/s3/aws-s3-upload-tester
+
+Make it executable:
+
+```
+chmod +x aws-s3-upload-tester
+```
+
+Run it to see a diagnostic message:
+
+```
+./aws-s3-upload-tester
+```
+
+
+## Set up image
+
+Create an image file such as `example.png` with any file name you want, in any place you want.
+
+Run:
+
+```
+./aws-s3-upload-tester sonicapp example.png image/png
+```
+
+
+## Set up AWS credentials
+
+If you see an error message that says anything about:
+
+```
+AWS_ACCESS_KEY_ID
+```
+
+Then the next step is to set up your credentials.
+
+You need this file from AWS:
+
+```
+credentials.csv
+```
+
+You can optionally save the credentials file in the default location:
+
+```
+mkdir $HOME/.aws
+mv credentials.csv $HOME/.aws/
+```
+
+When you open the CSV file, such as in a spreadsheet app, you should the cells with your credentials.
+
+You can opptionally set the credentials in your terminal shell, by editing your bash shell configuration file `$HOME/.profile` or your zsh shell configuration file `$HOME/.zshenv`, and setting your credentials:
+
+```
+export AWS_ACCESS_KEY_ID=...
+export AWS_SECRET_ACCESS_KEY=...
+```
+
+Open a new terminal window, then retry:
+
+```
+./aws-s3-upload-tester sonicapp example.png image/png
+```
+
+## Success?
+
