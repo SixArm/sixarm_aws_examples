@@ -1,0 +1,49 @@
+#!/bin/sh
+
+##
+# Delete AWS S3 bucket files that are older than a specified datetime.
+#
+# Syntax:
+#
+#     aws-s3-delete-objects-where-last-modified-is-less-than-via-bulk <bucket> <cutoff>
+#
+# Example:
+#
+#     bucket="mybucket"
+#     cutoff="2020-01-01T01:01:01.000Z"
+#     aws-s3-delete-objects-where-last-modified-is-less-than-via-bulk "$bucket" "$cutoff"
+#
+# Example for datetime delta of 30 days ago:
+#
+#     bucket="mybucket"
+#     cutoff=$(date -u "+%Y-%m-%dT%H:%M:%S.%N+00:00" --date -30days)
+#     aws-s3-delete-objects-where-last-modified-is-less-than-via-bulk "$bucket" "$cutoff"
+#
+# AWS S3 `delete-objects` has a limit of 1000 object keys.
+# This implementation processes up to 1000 objects per loop.
+##
+
+set -euf
+
+bucket="$1"
+cutoff="$2"
+
+zid() { hexdump -n 16 -v -e '16/1 "%02x" "\n"' /dev/random ; }
+temp_file=$(mktemp -t $(zid)); trap '{ rm -f "$tmp"; }' EXIT
+
+while true; do
+
+  aws s3api list-objects \
+    --bucket "$bucket" \
+    --no-paginate \
+    --max-items 1000 \
+    --query 'Contents[?LastModified<`'$cutoff'`][].{Key: Key}[] | {Objects: @}' \
+    > $temp_file
+
+  grep -q -m 1 Key $temp_file || break
+
+  aws s3api delete-objects \
+    --bucket "$bucket" \
+    --delete "file://$temp_file"
+
+done
