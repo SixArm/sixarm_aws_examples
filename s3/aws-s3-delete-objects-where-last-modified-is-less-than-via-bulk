@@ -28,8 +28,11 @@ set -euf
 bucket="$1"
 cutoff="$2"
 
+out() { printf %s\\n "$*" ; }
 zid() { hexdump -n 16 -v -e '16/1 "%02x" "\n"' /dev/random ; }
-temp_file=$(mktemp -t $(zid)); trap '{ rm -f "$tmp"; }' EXIT
+mktemp_file() { x=$(mktemp -t "${1:-$(zid)}") ; trap '{ rm -f "$x"; }' EXIT ; out "$x" ; }
+
+file=$(mktemp_file)
 
 while true; do
 
@@ -38,12 +41,12 @@ while true; do
     --no-paginate \
     --max-items 1000 \
     --query 'Contents[?LastModified<`'$cutoff'`][].{Key: Key}[] | {Objects: @}' \
-    > $temp_file
+    > $file
 
-  grep -q -m 1 Key $temp_file || break
+  grep -q -m 1 Key $file || break
 
   aws s3api delete-objects \
     --bucket "$bucket" \
-    --delete "file://$temp_file"
+    --delete "file://$file"
 
 done
